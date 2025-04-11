@@ -3,29 +3,28 @@ const crypto = require('crypto');
 const cors = require('cors');
 
 const app = express();
-app.use(express.json());
 app.use(cors());
+app.use(express.json());
 
 app.get('/generate-signature', (req, res) => {
-  const clientId = req.headers['client_id'];
-  const clientSecret = req.headers['secret'];
+  const { client_id, secret } = req.headers;
 
-  if (!clientId || !clientSecret) {
+  if (!client_id || !secret) {
     return res.status(400).json({ error: 'Missing client_id or secret in headers' });
   }
 
-  const t = Date.now().toString();
-  const signStr = clientId + t;
+  const timestamp = new Date().getTime(); // Get current UTC timestamp in ms
+  const signStr = client_id + timestamp;
 
   const sign = crypto
-    .createHmac('sha256', clientSecret)
+    .createHmac('sha256', secret)
     .update(signStr)
     .digest('hex')
     .toUpperCase();
 
   res.json({
-    client_id: clientId,
-    t,
+    client_id,
+    t: timestamp,
     sign,
     sign_method: 'HMAC-SHA256'
   });
