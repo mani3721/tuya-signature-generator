@@ -1,34 +1,62 @@
 const express = require('express');
 const crypto = require('crypto');
 const cors = require('cors');
+const axios = require('axios'); // You need axios for making HTTP requests
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get('/generate-signature', (req, res) => {
-  const { client_id, secret } = req.headers;
-
-  if (!client_id || !secret) {
-    return res.status(400).json({ error: 'Missing client_id or secret in headers' });
-  }
-
-  const timestamp = new Date().getTime(); // Get current UTC timestamp in ms
-  const signStr = client_id + timestamp;
-
-  const sign = crypto
-    .createHmac('sha256', secret)
-    .update(signStr)
-    .digest('hex')
-    .toUpperCase();
-
-  res.json({
-    client_id,
-    t: timestamp,
-    sign,
-    sign_method: 'HMAC-SHA256'
-  });
+// Create an axios instance for making requests
+const httpClient = axios.create({
+  baseURL: 'https://openapi.tuyain.com' // Replace with your actual API base URL
 });
+
+app.get('/sign-token', async (req, res) => {
+  try {
+    const { client_id, secret } = req.headers;
+    
+    if (!client_id || !secret) {
+      return res.status(400).json({ error: 'Missing client_id or secret in headers' });
+    }
+
+    const method = 'GET';
+    const timestamp = Date.now().toString();
+    const signUrl = '/v1.0/token?grant_type=1';
+    const contentHash = crypto.createHash('sha256').update('').digest('hex');
+    const stringToSign = [method, contentHash, '', signUrl].join('\n');
+    const signStr = client_id + timestamp + stringToSign;
+
+    const sign = encryptStr(signStr, secret);
+
+    const headers = {
+      t: timestamp,
+      sign_method: 'HMAC-SHA256',
+      client_id: client_id,
+      sign: sign
+    };
+
+    // Make the request to get the token
+    const response = await httpClient.get('/v1.0/token?grant_type=1', { headers });
+
+    // Return the response data along with the signing information
+    res.json({
+      ...(response.data.result || {}),
+      client_id,
+      t: timestamp,
+      sign,
+      sign_method: 'HMAC-SHA256'
+    });
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).json({ error: 'Failed to get token', message: error.message });
+  }
+});
+
+// Fixed function declaration - removed async and =>
+function encryptStr(str, secret) {
+  return crypto.createHmac('sha256', secret).update(str, 'utf8').digest('hex').toUpperCase();
+}
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
