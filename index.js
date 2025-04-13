@@ -58,6 +58,58 @@ function encryptStr(str, secret) {
   return crypto.createHmac('sha256', secret).update(str, 'utf8').digest('hex').toUpperCase();
 }
 
+
+app.get('/getRequestSign', async (req, res) => {
+
+
+  try {
+
+    const { client_id, secret, access_token, path, method = 'GET' } = req.headers;
+    if (!client_id || !secret || !access_token || !path) {
+      return res.status(400).json({ 
+        error: 'Missing required parameters', 
+        message: 'client_id, secret, access_token, and path are required in headers' 
+      });
+    }
+
+    const query = req.query || {};
+    const body = req.body || {};
+
+    const t = Date.now().toString();
+    const [uri, pathQuery] = path.split('?');
+    
+    const queryFromPath = pathQuery ? qs.parse(pathQuery) : {};
+    const queryMerged = { ...queryFromPath, ...query };
+    
+    const sortedQuery = {};
+    Object.keys(queryMerged)
+      .sort()
+      .forEach((i) => (sortedQuery[i] = queryMerged[i]));
+  
+    const querystring = decodeURIComponent(qs.stringify(sortedQuery));
+    const url = querystring ? `${uri}?${querystring}` : uri;
+    const contentHash = crypto.createHash('sha256').update(JSON.stringify(body)).digest('hex');
+    const stringToSign = [method, contentHash, '', url].join('\n');
+    const signStr = client_id + access_token + t + stringToSign;
+
+    const signedHeaders = {
+      t,
+      path: url,
+      client_id,
+      sign: encryptStr(signStr, secret),
+      sign_method: 'HMAC-SHA256',
+      access_token: access_token,
+    };
+
+    res.status(200).json(signedHeaders);
+
+  } catch (error) {
+    console.error("Error generating signature:", error);
+    res.status(500).json({ error: 'Failed to generate signature', message: error.message });
+  }
+});
+
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Signature server running at http://localhost:${PORT}`);
