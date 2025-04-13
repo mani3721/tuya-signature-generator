@@ -53,7 +53,7 @@ async function getToken(clientId, secretKey) {
 async function getDeviceInfo(deviceId, accessToken, clientId, secretKey) {
   const query = {};
   const method = 'GET';
-  const url = `/v1.0/devices/${deviceId}/status`;
+  const url = `/v1.0/devices/${deviceId}`;
   const reqHeaders = await getRequestSign(url, method, {}, query, {}, accessToken, clientId, secretKey);
 
   try {
