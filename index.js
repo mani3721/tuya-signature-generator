@@ -75,6 +75,7 @@ async function getDeviceInfo(accessToken, clientId, secretKey, path) {
   }
 }
 
+
 /**
  * HMAC-SHA256 crypto function
  */
@@ -122,12 +123,12 @@ async function getRequestSign(
 // API endpoint to get device info
 app.get('/get-device-info', async (req, res) => {
   // Read from query parameters instead of headers for better API design
-  const { client_id, secret, device_id } = req.headers;
+  const { client_id, secret, path } = req.headers;
   
-  if (!client_id || !secret || !device_id) {
+  if (!client_id || !secret || !path) {
     return res.status(400).json({
       success: false,
-      message: 'Missing required parameters: client_id, secret, or device_id'
+      message: 'Missing required parameters: client_id, secret, or path URL'
     });
   }
   
@@ -136,7 +137,7 @@ app.get('/get-device-info', async (req, res) => {
     const accessToken = await getToken(client_id, secret);
     
     // Get device info using the token
-    const deviceInfo = await getDeviceInfo(device_id, accessToken, client_id, secret);
+    const deviceInfo = await getDeviceInfo(accessToken, client_id, secret, path);
     
     // Return success response with device info
     res.json({
