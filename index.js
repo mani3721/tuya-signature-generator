@@ -50,10 +50,10 @@ async function getToken(clientId, secretKey) {
 /**
  * fetch highway business data
  */
-async function getDeviceInfo(deviceId, accessToken, clientId, secretKey) {
+async function getDeviceInfo(accessToken, clientId, secretKey, path) {
   const query = {};
   const method = 'GET';
-  const url = `/v1.0/devices/${deviceId}`;
+  const url = path;
   const reqHeaders = await getRequestSign(url, method, {}, query, {}, accessToken, clientId, secretKey);
 
   try {
