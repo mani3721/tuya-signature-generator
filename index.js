@@ -140,10 +140,8 @@ app.get('/get-device-info', async (req, res) => {
     const deviceInfo = await getDeviceInfo(accessToken, client_id, secret, path);
     
     // Return success response with device info
-    res.json({
-      success: true,
-      data: deviceInfo
-    });
+    res.status(200).json(deviceInfo);
+
   } catch (error) {
     console.error('Error:', error.message);
     res.status(500).json({
