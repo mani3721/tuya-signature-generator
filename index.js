@@ -69,7 +69,7 @@ async function getDeviceInfo(accessToken, clientId, secretKey, path) {
       throw Error(`request api failed: ${data.msg}`);
     }
     
-    return data.result;
+    return data;
   } catch (error) {
     throw Error(`Device info fetch error: ${error.message}`);
   }
